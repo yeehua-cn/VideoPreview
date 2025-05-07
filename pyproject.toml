@@ -3,8 +3,8 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "VideoViewer"
+name = "VideoPreviewTook"
 version = "0.1.0"
-description = "A video view tool."
+description = "A video preview tool."
 authors = [{ name = "yeehua", email = "yeehua@live.cn" }]
 dependencies = ["numpy>=1.21", "requests"]
