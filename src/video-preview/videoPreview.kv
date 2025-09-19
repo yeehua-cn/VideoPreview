@@ -1,0 +1,86 @@
+Root:
+    BoxLayout:
+        id: main_layout   
+        orientation: 'vertical'
+        BoxLayout:
+            id: action_bar_layout   
+            size_hint_y: None
+            height: 35
+            ActionBar:
+                size: root.width, 35
+                pos_hint: {'top':1}
+                background_color: .6, 4, .2, .6
+                ActionView:
+                    use_separator: True
+                    ActionPrevious:
+                        with_previous: False
+                    ActionButton:
+                        icon: 'atlas://data/images/defaulttheme/filechooser_folder'
+                        important: True
+                        text: '选择文件夹'
+                        on_release: root.show_choose_folder()
+                    ActionOverflow:
+                    ActionButton:
+                        text: '设置'
+                        on_release: root.show_setting()
+
+        BoxLayout:
+            id: file_layout   
+            minimum_height: 500
+            ScrollView:
+                id: file_layout_view   
+                BoxLayout:
+                    id: video_tree_layout   
+                    orientation: "vertical"
+                    width: 100
+
+            BoxLayout:
+
+
+
+<ChooseFolderDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            filters: ['!*']
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "取消"
+                on_release: root.cancel()
+
+            Button:
+                text: "选择"
+                on_release: root.choose(filechooser.path, filechooser.selection)
+
+<SaveDialog>:
+    text_input: text_input
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            on_selection: text_input.text = self.selection and self.selection[0] or ''
+
+        TextInput:
+            id: text_input
+            size_hint_y: None
+            height: 30
+            multiline: False
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Save"
+                on_release: root.save(filechooser.path, text_input.text)
