@@ -1,0 +1,5 @@
+default:
+  name: "默认配置"
+
+  logger:
+    level: INFO
