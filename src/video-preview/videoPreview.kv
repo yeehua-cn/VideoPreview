@@ -1,41 +1,124 @@
+<VpButton@Button>:
+    font_size: 14
+    spacing: [2, 2]
+    size_hint: [None,.5]
+    width: 80
+
+<VpLabel@Label>:
+    font_size: 14
+    pos_hint: [None, None]
+    color: [1,1,1,1]   
+    halign: 'right' 
+    size_hint: [None,.5]
+    width: 80
+
+<VpTextInput@TextInput>:
+    font_size: 14
+    background_color: 0.8, 0.8, 0.8, 1
+    write_tab: False
+    readonly: True    
+    size_hint: [0.5,.5]
+
 Root:
-    BoxLayout:
+    GridLayout:
+        cols: 1
+        size: root.width, root.height
         id: main_layout   
-        orientation: 'vertical'
-        BoxLayout:
-            id: action_bar_layout   
-            size_hint_y: None
-            height: 35
-            ActionBar:
-                size: root.width, 35
-                pos_hint: {'top':1}
-                background_color: .6, 4, .2, .6
-                ActionView:
-                    use_separator: True
-                    ActionPrevious:
-                        with_previous: False
-                    ActionButton:
-                        icon: 'atlas://data/images/defaulttheme/filechooser_folder'
-                        important: True
-                        text: '选择文件夹'
-                        on_release: root.show_choose_folder()
-                    ActionOverflow:
-                    ActionButton:
-                        text: '设置'
-                        on_release: root.show_setting()
+        ActionBar:
+            size: root.width, 35
+            pos_hint: {'top':1}
+            background_color: .6, 4, .2, .6
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: False
+                ActionButton:
+                    icon: 'atlas://data/images/defaulttheme/filechooser_folder'
+                    important: True
+                    text: '选择文件夹'
+                    on_release: root.show_choose_folder()
+                ActionOverflow:
+                ActionButton:
+                    text: '设置'
+                    on_release: root.show_setting()
 
         BoxLayout:
             id: file_layout   
-            minimum_height: 500
+            orientation: 'horizontal'
+            size_hint: (1, 0.8)
             ScrollView:
-                id: file_layout_view   
+                id: file_layout_view 
+                size_hint: (0.25, 1)  
                 BoxLayout:
                     id: video_tree_layout   
+                    size_hint_y: None
                     orientation: "vertical"
                     width: 100
+            BoxLayout:
+                id: player_layout
+                size_hint: (0.75, 1)
+                orientation: 'vertical'
+                VideoPlayer:
+                    id: video_player
+                    thumbnail: 'data/logo/kivy-icon-512.png'
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint: (1, 0.2)
+            GridLayout:
+                size_hint: (0.4, 1)
+		        cols: 1
+                rows: 2
+                GridLayout:
+                    size_hint: (0.5, 0.5)
+                    cols: 4
+                    rows: 3
+                    VpLabel:
+                        text: "文件名"
+                    VpTextInput:
+                        id: show_video_name
+
+                    VpLabel:
+                        text: "类型"
+                    VpTextInput:
+                        id: show_video_type
+
+                    VpLabel:
+                        text: "大小"
+                    VpTextInput:
+                        id: show_video_size
+
+                    VpLabel:
+                        text: "时长"
+                    VpTextInput:
+                        id: show_video_duration
+
+                    VpLabel:
+                        text: "分辨率"
+                    VpTextInput:
+                        id: show_video_resolution
+                    VpLabel:
+                        text: "源帧率"
+                    VpTextInput:
+                        id: show_video_fps
+                Button:
+                    id: generate_preview_button
+                    size_hint: (0.5, 0.2)
+                    font_size: 14
+                    spacing: [2, 2]
+                    text: "生 成 预 览 图"
+                    on_release: root.generate_thumbnail()
 
             BoxLayout:
-
+                orientation: 'horizontal'
+                size_hint: (0.6, 1)
+                ScrollView:
+                    size_hint: (1, 1)
+                    GridLayout:
+                        id: video_thumbnails_layout
+                        rows: 1
+                        spacing: 10
+                        size_hint_x: None
 
 
 <ChooseFolderDialog>:
@@ -58,29 +141,11 @@ Root:
                 text: "选择"
                 on_release: root.choose(filechooser.path, filechooser.selection)
 
-<SaveDialog>:
-    text_input: text_input
+<ViewPreviewImageDialog>:
     BoxLayout:
         size: root.size
         pos: root.pos
         orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            on_selection: text_input.text = self.selection and self.selection[0] or ''
-
-        TextInput:
-            id: text_input
-            size_hint_y: None
-            height: 30
-            multiline: False
-
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-
-            Button:
-                text: "Save"
-                on_release: root.save(filechooser.path, text_input.text)
+        Carousel:
+            id: preview_image_carousel
+            direction:'right'

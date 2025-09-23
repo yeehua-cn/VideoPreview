@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 from collections import defaultdict
 import logging
+
+from utils.file_util import SizeFormatter
    
 # 常见视频文件扩展名
 VIDEO_EXTENSIONS = {
@@ -58,7 +60,8 @@ class VideoFileTree:
                         'path': str(item_path),
                         'type': 'file',
                         'extension': item_path.suffix.lower(),
-                        'size': item_path.stat().st_size
+                        'size': item_path.stat().st_size,
+                        'pretty_size': SizeFormatter.format_size_auto(item_path.stat().st_size)  
                     })
             except (OSError, PermissionError) as e:
                 # 处理无法访问的文件或目录
