@@ -18,6 +18,7 @@ class OpenCVVideoInfoExtractor:
     
     def __init__(self):
         """初始化视频信息提取器"""
+        self._generate_thumbnails_at_times_progress = 0
         pass
     
     def get_video_info(self, video_path):
@@ -197,6 +198,7 @@ class OpenCVVideoInfoExtractor:
         Raises:
             ValueError: 如果无法打开视频文件或时间点无效
         """
+        self._generate_thumbnails_at_times_progress = 0
         video_path = Path(video_path).resolve()
         
         if not video_path.exists():
@@ -269,6 +271,9 @@ class OpenCVVideoInfoExtractor:
                 else:
                     logging.warning(f"警告: 无法在时间点 {time_point}s 读取帧")
                     results[time_point] = None
+                
+                self._generate_thumbnails_at_times_progress = (valid_times.index(time_point) + 1) / len(valid_times)
+                logging.debug(f"generate thumbnails progress [{str(self._generate_thumbnails_at_times_progress)}]")
             
             return results
             
@@ -276,6 +281,8 @@ class OpenCVVideoInfoExtractor:
             cap.release()
     
 
+    def get_generate_thumbnails_at_times_progress(self):
+        return self._generate_thumbnails_at_times_progress
 
 
 # 使用示例和测试
