@@ -1,6 +1,7 @@
 from PIL import Image
 import cv2  # 若需使用OpenCV
 
+
 def generate_thumbnail(video_path: str, output_path: str, time_sec: int = 10):
     # 使用FFmpeg或OpenCV提取关键帧
     cap = cv2.VideoCapture(video_path)
