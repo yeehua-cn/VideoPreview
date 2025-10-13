@@ -1,22 +1,27 @@
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
+from kivy.uix.boxlayout import BoxLayout
+
 
 class KivyGuiApp(App):
     def build(self):
         return root_widget
+
 
 class MyBox(BoxLayout):
     def print_ids(self, *args):
         print("\nids:")
         for widget in self.walk():
             print("{} -> {}".format(widget, widget.ids))
+
     def print_names(self, *args):
         print("\nnames:")
         for widget in self.walk():
             print("{} -> {}".format(widget, widget.name))
 
-root_widget = Builder.load_string("""
+
+root_widget = Builder.load_string(
+    """
 MyBox:
     id: screen_manager
     name: 'screen_manager'
@@ -38,8 +43,8 @@ MyBox:
         name: 'button_names'
         text: 'print names to console'
         on_release: app.root.print_names()
-""")
+"""
+)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     KivyGuiApp().run()
-
