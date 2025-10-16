@@ -105,9 +105,6 @@ class Root(FloatLayout):
 
         self.dismiss_popup()
         self.load_video_tree(self.folder)
-        self.ids.video_tree_layout.bind(
-            minimum_height=self.ids.video_tree_layout.setter("height")
-        )
 
     def load_video_tree(self, path):
         tree_builder = VideoFileTree(path)
@@ -116,12 +113,16 @@ class Root(FloatLayout):
         self._render_video_tree(video_tree_data)
 
     def _render_video_tree(self, video_tree_data):
-        self.video_treeview = TreeView(hide_root=True, size_hint_y=None)
+        self.video_treeview = TreeView(
+            hide_root=True,
+            size_hint=(None, None),
+            size=(self.parent.width, self.parent.height),
+        )
         self.video_treeview.bind(minimum_height=self.video_treeview.setter("height"))
         self.video_treeview.bind(minimum_width=self.video_treeview.setter("width"))
-
-        self.ids.video_tree_layout.add_widget(self.video_treeview)
         self._populate_video_tree(self.video_treeview, None, video_tree_data)
+
+        self.ids.file_tree_layout_view.add_widget(self.video_treeview)
 
     def _populate_video_tree(self, tree_view, parent, node_data):
         logging.debug(
@@ -131,8 +132,9 @@ class Root(FloatLayout):
         button_node = TreeViewButton(
             path=node_data["path"],
             text=node_data["name"],
-            size_hint_y=None,
             is_open=True,
+            background_color=[0.1, 0.1, 0.1, 1],
+            even_color=[0.5, 0.5, 0.5, 0.1],
         )
         button_node.bind(on_press=self.choose_video_file)
 
