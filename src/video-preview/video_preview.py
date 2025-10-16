@@ -101,7 +101,7 @@ class Root(FloatLayout):
         self.video_info_dict = {}
         logging.info(f"choose_folder: path={self.folder}, filename={filename}")
         if self.video_treeview is not None:
-            self.ids.video_tree_layout.remove_widget(self.video_treeview)
+            self.ids.file_tree_layout_view.remove_widget(self.video_treeview)
 
         self.dismiss_popup()
         self.load_video_tree(self.folder)
