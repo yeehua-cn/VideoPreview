@@ -37,3 +37,7 @@ build-packages = [
     "pyinstaller>=6.16.0",
 ]
 
+[[tool.pdm.source]]  # Use a custom index
+url = "https://pypi.mirrors.ustc.edu.cn/simple/"
+name = "pypi"
+
