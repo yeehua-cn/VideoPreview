@@ -50,10 +50,12 @@ Root:
             id: file_layout   
             orientation: 'horizontal'
             size_hint: (1, 0.8)
-            BoxLayout:
-                id: file_layout
-                size_hint: (0.25, 1)
-                orientation: 'vertical'
+            Splitter:
+                sizable_from: 'right'
+                min_size: '260sp'
+                size_hint: (.25, 1)
+                strip_size: '4pt'
+                id: tree_splitter
                 ScrollView:
                     id: file_tree_layout_view 
                     size: (self.parent.width, self.parent.height)
