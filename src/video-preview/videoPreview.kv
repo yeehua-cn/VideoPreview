@@ -1,3 +1,7 @@
+<TreeBranchLabel>:
+    on_touch_down: self.click(self.path)
+
+
 <VpButton@Button>:
     font_size: 14
     spacing: [2, 2]
@@ -120,26 +124,6 @@ Root:
                         spacing: 10
                         size_hint_x: None
 
-
-<ChooseFolderDialog>:
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            filters: ['!*']
-
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "取消"
-                on_release: root.cancel()
-
-            Button:
-                text: "选择"
-                on_release: root.choose(filechooser.path, filechooser.selection)
 
 <ViewPreviewImageDialog>:
     BoxLayout:

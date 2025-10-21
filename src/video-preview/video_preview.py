@@ -3,6 +3,7 @@ import logging
 import os
 import time
 
+from gui.file.file_browser import FileBrowser, get_home_directory
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -29,11 +30,6 @@ Window.size = (1366, 768)
 os.environ["KIVY_VIDEO"] = "ffpyplayer"
 
 
-class ChooseFolderDialog(FloatLayout):
-    choose = ObjectProperty(None)
-    cancel = ObjectProperty(None)
-
-
 class ViewPreviewImageDialog(FloatLayout):
     close = ObjectProperty(None)
 
@@ -48,9 +44,11 @@ class ViewPreviewImageDialog(FloatLayout):
         self.ids.preview_image_carousel.index = index
 
 
-class TreeViewButton(Button, TreeViewLabel):
+class TreeBranchLabel(TreeViewLabel):
+    click = ObjectProperty(None)
+    
     def __init__(self, path, **kwargs):
-        super(TreeViewButton, self).__init__(**kwargs)
+        super(TreeBranchLabel, self).__init__(**kwargs)
         self.path = path
 
 
@@ -78,9 +76,20 @@ class Root(FloatLayout):
     def dismiss_popup(self):
         self._popup.dismiss()
 
+    def filebrowser_dismiss_popup(self, instance):
+        self._popup.dismiss()
+
     def show_choose_folder(self):
-        content = ChooseFolderDialog(
-            choose=self.choose_folder, cancel=self.dismiss_popup
+        user_path = os.path.join(get_home_directory(), "Documents")
+        content = FileBrowser(
+            select_string="选择",
+            cancel_string="取消",
+            favorites=[(user_path, "Documents")],
+            filters=["!*"],
+            dirselect=True,
+        )
+        content.bind(
+            on_success=self.choose_folder, on_canceled=self.filebrowser_dismiss_popup
         )
         self._popup = Popup(title="选择文件夹", content=content, size_hint=(0.9, 0.9))
         self._popup.open()
@@ -96,10 +105,12 @@ class Root(FloatLayout):
         self._popup = Popup(title="预览图片", content=content, size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def choose_folder(self, path, filename):
-        self.folder = path
+    def choose_folder(self, instance):
+        logging.info(
+            f"choose_folder: path={instance.path}, filename={instance.filename}"
+        )
+        self.folder = instance.filename
         self.video_info_dict = {}
-        logging.info(f"choose_folder: path={self.folder}, filename={filename}")
         if self.video_treeview is not None:
             self.ids.file_tree_layout_view.remove_widget(self.video_treeview)
 
@@ -129,19 +140,17 @@ class Root(FloatLayout):
             f"_populate_video_tree: parent={parent}, node={node_data['name']}, path={node_data['path']}"
         )
 
-        button_node = TreeViewButton(
+        path_node = TreeBranchLabel(
             path=node_data["path"],
             text=node_data["name"],
             is_open=True,
-            background_color=[0.1, 0.1, 0.1, 1],
-            even_color=[0.5, 0.5, 0.5, 0.1],
+            click = self.choose_video_file
         )
-        button_node.bind(on_press=self.choose_video_file)
 
         if parent is None:
-            tree_node = tree_view.add_node(button_node)
+            tree_node = tree_view.add_node(path_node)
         else:
-            tree_node = tree_view.add_node(button_node, parent)
+            tree_node = tree_view.add_node(path_node, parent)
 
         if node_data["type"] == "directory" and "children" in node_data:
             for child_node in node_data["children"]:
@@ -149,11 +158,11 @@ class Root(FloatLayout):
         else:
             self.video_info_dict[node_data["path"]] = node_data
 
-    def choose_video_file(self, instance):
-        logging.info(f"Video file: [{instance.path}] has been chosen !")
+    def choose_video_file(self, path):
+        logging.info(f"Video file: [{path}] has been chosen !")
         self.ids.video_player.state = "stop"
-        self.show_video_info(instance.path)
-        self.load_video_thumbnails(instance.path)
+        self.show_video_info(path)
+        self.load_video_thumbnails(path)
 
     def show_video_info(self, path):
         if path not in self.video_info_dict:
@@ -311,7 +320,6 @@ class VideoPreviewApp(App):
 
 
 Factory.register("Root", cls=Root)
-Factory.register("ChooseFolderDialog", cls=ChooseFolderDialog)
 Factory.register("ViewPreviewImageDialog", cls=ViewPreviewImageDialog)
 
 
