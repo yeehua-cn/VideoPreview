@@ -127,11 +127,11 @@ class Root(FloatLayout):
         else:
             self.video_info_dict[node_data["path"]] = node_data
 
-    def choose_video_file(self, path):
-        logging.info(f"Video file: [{path}] has been chosen !")
+    def choose_video_file(self, instance):
+        logging.info(f"Video file: [{instance.path}] has been chosen !")
         self.ids.video_player.state = "stop"
-        self.show_video_info(path)
-        self.load_video_thumbnails(path)
+        self.show_video_info(instance.path)
+        self.load_video_thumbnails(instance.path)
 
     def show_video_info(self, path):
         if path not in self.video_info_dict:

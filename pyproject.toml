@@ -36,6 +36,9 @@ Repository = "https://github.com/yeehua-cn/VideoPreview"
 build-packages = [
   "pyinstaller>=6.16.0",
 ]
+dev = [
+  "black>=25.9.0",
+]
 
 [[tool.pdm.source]] # Use a custom index
 name = "pypi"
