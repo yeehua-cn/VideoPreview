@@ -1,29 +1,29 @@
 [build-system]
-requires = ["pdm-backend >= 2.4.0"]
 build-backend = "pdm.backend"
+requires = ["pdm-backend >= 2.4.0"]
 
 [project]
-name = "VideoPreview"
-version = "0.1.0"
-description = "A video preview tool."
-authors = [{ name = "yeehua", email = "yeehua@live.cn" }]
-maintainers = [
-  {name = "yeehua", email = "yeehua@live.cn"}
-]
-readme = "README.md"
-keywords = ["video", "preview","video player" , "snapshot"]
-requires-python = "<3.15,>=3.11"
+authors = [{name = "yeehua", email = "yeehua@live.cn"}]
 dependencies = [
-    "Kivy>=2.3.1",       # GUI框架
-    "python-vlc>=3.0.0",    # 视频播放（跨平台支持）
-    "Pillow>=11.3.0",       # 缩略图生成
-    "numpy>=1.21",          # 图像处理（配合OpenCV可选）
-    "image==1.5.33",
-    "kivymd==1.2.0",
-    "dynaconf>=3.2.11",
-    "opencv-python>=4.12.0",
-    "ffpyplayer>=4.5.3",
+  "Kivy>=2.3.1", # GUI框架
+  "python-vlc>=3.0.0", # 视频播放（跨平台支持）
+  "Pillow>=11.3.0", # 缩略图生成
+  "numpy>=1.21", # 图像处理（配合OpenCV可选）
+  "image==1.5.33",
+  "kivymd==1.2.0",
+  "dynaconf>=3.2.11",
+  "opencv-python>=4.12.0",
+  "ffpyplayer>=4.5.3",
 ]
+description = "A video preview tool."
+keywords = ["video", "preview", "video player", "snapshot"]
+maintainers = [
+  {name = "yeehua", email = "yeehua@live.cn"},
+]
+name = "VideoPreview"
+readme = "README.md"
+requires-python = "<3.15,>=3.11"
+version = "0.1.0"
 
 [project.license]
 text = "Apache-2.0"
@@ -34,10 +34,9 @@ Repository = "https://github.com/yeehua-cn/VideoPreview"
 
 [dependency-groups]
 build-packages = [
-    "pyinstaller>=6.16.0",
+  "pyinstaller>=6.16.0",
 ]
 
-[[tool.pdm.source]]  # Use a custom index
-url = "https://pypi.mirrors.ustc.edu.cn/simple/"
+[[tool.pdm.source]] # Use a custom index
 name = "pypi"
-
+url = "https://pypi.mirrors.ustc.edu.cn/simple/"

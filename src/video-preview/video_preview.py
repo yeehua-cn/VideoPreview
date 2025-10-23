@@ -4,13 +4,12 @@ import os
 import time
 
 from gui.file.file_browser import FileBrowser, get_home_directory
+from gui.file.file_list import TreeBranchLabel
+from gui.image.image_viewer import ThumbnailImage, ViewPreviewImageDialog
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.factory import Factory
-from kivy.properties import ObjectProperty
-from kivy.uix.behaviors import ButtonBehavior
-from kivy.uix.button import Button
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.image import Image
@@ -18,7 +17,7 @@ from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
 from kivy.uix.progressbar import ProgressBar
-from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewNode
+from kivy.uix.treeview import TreeView
 from kivy.uix.videoplayer import VideoPlayer
 from utils.file_util import get_image_files
 from utils.sequence_generator import SequenceGenerator
@@ -26,36 +25,6 @@ from utils.video_file_util import VideoFileTree
 from utils.video_meta_util import OpenCVVideoInfoExtractor
 
 Window.size = (1366, 768)
-
-os.environ["KIVY_VIDEO"] = "ffpyplayer"
-
-
-class ViewPreviewImageDialog(FloatLayout):
-    close = ObjectProperty(None)
-
-    def render_images(self, images_array):
-        for thumbnail in images_array:
-            logging.debug(f"  render video thumbnail: {thumbnail}")
-            self.ids.preview_image_carousel.add_widget(
-                Image(source=thumbnail, fit_mode="contain")
-            )
-
-    def show_images(self, index):
-        self.ids.preview_image_carousel.index = index
-
-
-class TreeBranchLabel(TreeViewLabel):
-    click = ObjectProperty(None)
-    
-    def __init__(self, path, **kwargs):
-        super(TreeBranchLabel, self).__init__(**kwargs)
-        self.path = path
-
-
-class ThumbnailImage(ButtonBehavior, Image):
-    def __init__(self, index, **kwargs):
-        super(ThumbnailImage, self).__init__(**kwargs)
-        self.index = index
 
 
 class Root(FloatLayout):
@@ -144,8 +113,8 @@ class Root(FloatLayout):
             path=node_data["path"],
             text=node_data["name"],
             is_open=True,
-            click = self.choose_video_file
         )
+        path_node.bind(on_press=self.choose_video_file)
 
         if parent is None:
             tree_node = tree_view.add_node(path_node)
