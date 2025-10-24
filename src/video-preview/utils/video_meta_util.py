@@ -8,6 +8,8 @@ from typing import Dict, List, Union
 import cv2
 from utils.time_duration_util import TimeDurationFormatter
 
+logger = logging.getLogger(__name__)
+
 # 视频信息 元组
 VideoInfo = namedtuple(
     "VideoInfo",
@@ -270,7 +272,7 @@ class OpenCVVideoInfoExtractor:
                         filename = f"{prefix}_{time_str}s.{format}"
                         output_path = output_dir / filename
 
-                        logging.debug(f"generate thumbnails with [{str(output_path)}]")
+                        logger.debug(f"Generate thumbnails with [{str(output_path)}]")
 
                         # 保存图像
                         # if format.lower() in ['jpg', 'jpeg']:
@@ -298,8 +300,8 @@ class OpenCVVideoInfoExtractor:
                 self._generate_thumbnails_at_times_progress = (
                     valid_times.index(time_point) + 1
                 ) / len(valid_times)
-                logging.debug(
-                    f"generate thumbnails progress [{str(self._generate_thumbnails_at_times_progress)}]"
+                logger.debug(
+                    f"Generate thumbnails progress [{str(self._generate_thumbnails_at_times_progress)}]"
                 )
 
             return results

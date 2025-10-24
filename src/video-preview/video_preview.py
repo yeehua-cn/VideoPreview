@@ -1,27 +1,22 @@
 import _thread
 import logging
 import os
-import time
 
+from core.preview_image import PreviewImage
+from gui.base.progress_viewer import ProgressViewer
 from gui.file.file_browser import FileBrowser, get_home_directory
 from gui.file.file_list import TreeBranchLabel
-from gui.image.image_viewer import ThumbnailImage, ViewPreviewImageDialog
+from gui.image.image_viewer import ImagesViewer, Thumbnail
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.image import Image
-from kivy.uix.label import Label
-from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
-from kivy.uix.progressbar import ProgressBar
 from kivy.uix.treeview import TreeView
 from kivy.uix.videoplayer import VideoPlayer
-from utils.file_util import get_image_files
 from utils.sequence_generator import SequenceGenerator
-from utils.video_file_util import VideoFileTree
+from utils.video_file_util import get_video_tree
 from utils.video_meta_util import OpenCVVideoInfoExtractor
 
 Window.size = (1366, 768)
@@ -50,17 +45,17 @@ class Root(FloatLayout):
 
     def show_choose_folder(self):
         user_path = os.path.join(get_home_directory(), "Documents")
-        content = FileBrowser(
+        browser = FileBrowser(
             select_string="选择",
             cancel_string="取消",
             favorites=[(user_path, "Documents")],
             filters=["!*"],
             dirselect=True,
         )
-        content.bind(
+        browser.bind(
             on_success=self.choose_folder, on_canceled=self.filebrowser_dismiss_popup
         )
-        self._popup = Popup(title="选择文件夹", content=content, size_hint=(0.9, 0.9))
+        self._popup = Popup(title="选择文件夹", content=browser, size_hint=(0.9, 0.9))
         self._popup.open()
 
     def show_setting(self):
@@ -68,10 +63,12 @@ class Root(FloatLayout):
 
     def show_preview_image(self, instance):
         # 显示视频缩略图
-        content = ViewPreviewImageDialog(close=self.dismiss_popup)
-        content.render_images(self.generate_thumbnails_array)
-        content.show_images(instance.index)
-        self._popup = Popup(title="预览图片", content=content, size_hint=(0.9, 0.9))
+        viewer = ImagesViewer(
+            images=self.generate_thumbnails_array, index=instance.index
+        )
+        viewer.bind(on_canceled=self.dismiss_popup)
+
+        self._popup = Popup(title="预览图片", content=viewer, size_hint=(0.9, 0.9))
         self._popup.open()
 
     def choose_folder(self, instance):
@@ -87,10 +84,7 @@ class Root(FloatLayout):
         self.load_video_tree(self.folder)
 
     def load_video_tree(self, path):
-        tree_builder = VideoFileTree(path)
-        video_tree_data = tree_builder.build_tree()
-        # tree_builder.print_tree()
-        self._render_video_tree(video_tree_data)
+        self._render_video_tree(get_video_tree(path))
 
     def _render_video_tree(self, video_tree_data):
         self.video_treeview = TreeView(
@@ -131,7 +125,10 @@ class Root(FloatLayout):
         logging.info(f"Video file: [{instance.path}] has been chosen !")
         self.ids.video_player.state = "stop"
         self.show_video_info(instance.path)
-        self.load_video_thumbnails(instance.path)
+
+        thumbnails_array = PreviewImage.load_video_thumbnails(instance.path)
+        self.generate_thumbnails_array = thumbnails_array
+        self.render_thumbnails(thumbnails_array)
 
     def show_video_info(self, path):
         if path not in self.video_info_dict:
@@ -168,73 +165,25 @@ class Root(FloatLayout):
         _thread.start_new_thread(self.do_generate_thumbnail, ())
 
     def do_generate_thumbnail(self):
-        seq = self.get_video_time_seq()
-        file_name = self.choose_video_info["name"]
-        output_dir = self.get_thumbnails_folder(self.choose_video_info["path"])
-        logging.info(
-            f"Generate thumbnails for video seq : {seq} , output_dir: {output_dir}"
+        self.generate_thumbnails_array = PreviewImage.generate_thumbnails(
+            self.videoInfoExtractor, self.choose_video_meta_info
         )
-
-        thumbnails = self.videoInfoExtractor.generate_thumbnails_at_times(
-            self.choose_video_info["path"],
-            seq,
-            output_dir,
-            prefix=file_name + "-" + "thumbnail",
-            format="jpg",
-            quality=95,
-        )
-        logging.info(f"Generate thumbnails: {thumbnails}")
-        self.generate_thumbnails_array = []
-        for time_point, file_path in thumbnails.items():
-            self.generate_thumbnails_array.append(file_path)
 
     def show_generate_thumbnails_process(self):
-        # 显示生成进度
-        self.processModalView = ModalView(
-            auto_dismiss=False, size_hint=(None, None), size=(400, 50)
-        )
-        processGrid = GridLayout(cols=1, padding=10)
-        processGrid.add_widget(
-            Label(
-                text="生成预览图进度",
-                font_size=12,
-            )
-        )
-        self.generateProgressBar = ProgressBar(max=1, value=0)
-        processGrid.add_widget(self.generateProgressBar)
-        self.processModalView.add_widget(processGrid)
-        self.processModalView.open()
-        self.generateProgressBarEvent = Clock.schedule_interval(
-            self.update_generate_progress, 1.0
+        self.progress_viewer = ProgressViewer(
+            title_text="生成预览图进度",
+            on_update_value=self.update_generate_progress,
+            on_complete=self.video_thumbnails_generate_complete,
         )
 
-    def update_generate_progress(self, dt):
+    def update_generate_progress(self):
         # 生成预览图进度更新
         progress = self.videoInfoExtractor.get_generate_thumbnails_at_times_progress()
-        self.generateProgressBar.value = progress
         logging.debug(f" update_generate_progress: {progress}")
-        if progress >= 1:
-            if self.generateProgressBarEvent is not None:
-                self.generateProgressBarEvent.cancel()
+        self.progress_viewer.update_progress_value(progress)
 
-            self.render_thumbnails(self.generate_thumbnails_array)
-            self.processModalView.dismiss()
-
-    def get_thumbnails_folder(self, video_path):
-        # 预览图存储目录
-        return video_path + "-" + "thumbnails"
-
-    def load_video_thumbnails(self, video_path):
-        # 获取目录下的所有图片文件
-        image_files = get_image_files(self.get_thumbnails_folder(video_path))
-        logging.info(f"  load exists thumbnails: {image_files}")
-
-        thumbnails_array = []
-        for image_info in image_files:
-            thumbnails_array.append(image_info.path)
-
-        self.render_thumbnails(thumbnails_array)
-        self.generate_thumbnails_array = thumbnails_array
+    def video_thumbnails_generate_complete(self):
+        self.render_thumbnails(self.generate_thumbnails_array)
 
     def render_thumbnails(self, thumbnails_array):
         self.ids.video_thumbnails_layout.bind(
@@ -251,7 +200,7 @@ class Root(FloatLayout):
         index = 0
         for thumbnail in thumbnails_array:
             logging.debug(f"  add thumbnail: {thumbnail}")
-            thumbnail_image = ThumbnailImage(
+            thumbnail_image = Thumbnail(
                 index=index,
                 source=thumbnail,
                 size_hint=(None, 1),
@@ -261,35 +210,13 @@ class Root(FloatLayout):
             self.ids.video_thumbnails_layout.add_widget(thumbnail_image)
             index += 1
 
-    def get_video_time_seq(self):
-        #  生成视频预览图片的时间序列
-        logging.info(
-            f"choose video time duration: {self.choose_video_meta_info.duration}"
-        )
-        if self.choose_video_meta_info.duration <= 3:
-            return self.sequenceGenerator.generate_uniform_sequence(
-                self.choose_video_meta_info.duration, 1
-            )
-        if self.choose_video_meta_info.duration <= 30:
-            return self.sequenceGenerator.generate_uniform_sequence(
-                self.choose_video_meta_info.duration, 3
-            )
-        elif self.choose_video_meta_info.duration <= 300:
-            return self.sequenceGenerator.generate_uniform_sequence(
-                self.choose_video_meta_info.duration, 6
-            )
-        else:
-            return self.sequenceGenerator.generate_uniform_sequence(
-                self.choose_video_meta_info.duration, 10
-            )
-
 
 class VideoPreviewApp(App):
     pass
 
 
 Factory.register("Root", cls=Root)
-Factory.register("ViewPreviewImageDialog", cls=ViewPreviewImageDialog)
+Factory.register("ImagesViewer", cls=ImagesViewer)
 
 
 if __name__ == "__main__":
