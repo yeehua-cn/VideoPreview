@@ -2,7 +2,7 @@ import logging
 
 from utils.file_util import get_image_files
 from utils.sequence_generator import SequenceGenerator
-from utils.video_meta_util import OpenCVVideoInfoExtractor, VideoInfo
+from utils.video_meta_util import VideoInfo, VideoInfoExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class PreviewImage:
         return seq
 
     @staticmethod
-    def generate_thumbnails(extractor: OpenCVVideoInfoExtractor, video_info: VideoInfo):
+    def generate_thumbnails(extractor: VideoInfoExtractor, video_info: VideoInfo):
         logger.info(f"Generate video thumbnails from: {video_info}")
 
         seq = PreviewImage.get_video_time_seq(int(video_info.duration))

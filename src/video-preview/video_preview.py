@@ -5,35 +5,25 @@ import os
 from core.preview_image import PreviewImage
 from gui.base.progress_viewer import ProgressViewer
 from gui.file.file_browser import FileBrowser, get_home_directory
-from gui.file.file_list import TreeBranchLabel
+from gui.file.file_list import FileTreeViewer
 from gui.image.image_viewer import ImagesViewer, Thumbnail
 from kivy.app import App
-from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.popup import Popup
-from kivy.uix.treeview import TreeView
-from kivy.uix.videoplayer import VideoPlayer
-from utils.sequence_generator import SequenceGenerator
-from utils.video_file_util import get_video_tree
-from utils.video_meta_util import OpenCVVideoInfoExtractor
+from utils.file_util import get_video_tree
+from utils.video_meta_util import VideoInfoExtractor
 
 Window.size = (1366, 768)
 
 
 class Root(FloatLayout):
-    videoInfoExtractor = OpenCVVideoInfoExtractor()
-    sequenceGenerator = SequenceGenerator()
+    videoInfoExtractor = VideoInfoExtractor()
     folder = None
     choose_video_info = None
     choose_video_meta_info = None
-    video_info_dict = {}
     video_treeview = None
-    processModalView = None
-    generateProgressBar = None
-    generateProgressBarEvent = None
-    viewPreviewImageDialog = None
     generate_thumbnails_array = []
     video_thumbnails_widget_list = []
 
@@ -76,7 +66,6 @@ class Root(FloatLayout):
             f"choose_folder: path={instance.path}, filename={instance.filename}"
         )
         self.folder = instance.filename
-        self.video_info_dict = {}
         if self.video_treeview is not None:
             self.ids.file_tree_layout_view.remove_widget(self.video_treeview)
 
@@ -84,69 +73,41 @@ class Root(FloatLayout):
         self.load_video_tree(self.folder)
 
     def load_video_tree(self, path):
-        self._render_video_tree(get_video_tree(path))
-
-    def _render_video_tree(self, video_tree_data):
-        self.video_treeview = TreeView(
-            hide_root=True,
-            size_hint=(None, None),
-            size=(self.parent.width, self.parent.height),
+        video_tree_data = get_video_tree(path)
+        self.video_viewer = FileTreeViewer(
+            tree_size=self.parent.size,
+            tree_data=video_tree_data,
+            on_selected=self.choose_video_file,
         )
-        self.video_treeview.bind(minimum_height=self.video_treeview.setter("height"))
-        self.video_treeview.bind(minimum_width=self.video_treeview.setter("width"))
-        self._populate_video_tree(self.video_treeview, None, video_tree_data)
-
+        self.video_treeview = self.video_viewer.get_treeview()
         self.ids.file_tree_layout_view.add_widget(self.video_treeview)
 
-    def _populate_video_tree(self, tree_view, parent, node_data):
-        logging.debug(
-            f"_populate_video_tree: parent={parent}, node={node_data['name']}, path={node_data['path']}"
-        )
+    def choose_video_file(self, file_info):
+        logging.info(f"Video file: [{file_info.path}] has been chosen !")
+        if file_info.type == "directory":
+            return
 
-        path_node = TreeBranchLabel(
-            path=node_data["path"],
-            text=node_data["name"],
-            is_open=True,
-        )
-        path_node.bind(on_press=self.choose_video_file)
-
-        if parent is None:
-            tree_node = tree_view.add_node(path_node)
-        else:
-            tree_node = tree_view.add_node(path_node, parent)
-
-        if node_data["type"] == "directory" and "children" in node_data:
-            for child_node in node_data["children"]:
-                self._populate_video_tree(tree_view, tree_node, child_node)
-        else:
-            self.video_info_dict[node_data["path"]] = node_data
-
-    def choose_video_file(self, instance):
-        logging.info(f"Video file: [{instance.path}] has been chosen !")
+        self.choose_video_info = file_info
         self.ids.video_player.state = "stop"
-        self.show_video_info(instance.path)
+        self.show_video_info(file_info)
 
-        thumbnails_array = PreviewImage.load_video_thumbnails(instance.path)
+        thumbnails_array = PreviewImage.load_video_thumbnails(file_info.path)
         self.generate_thumbnails_array = thumbnails_array
         self.render_thumbnails(thumbnails_array)
 
-    def show_video_info(self, path):
-        if path not in self.video_info_dict:
-            return
-
-        self.choose_video_info = self.video_info_dict[path]
-        self.choose_video_meta_info = self.videoInfoExtractor.get_video_info(path)
-
-        logging.info(
-            f"video_file_info: {self.choose_video_info} . choose_video_meta_info: {self.choose_video_meta_info}"
+    def show_video_info(self, file_info):
+        self.choose_video_meta_info = self.videoInfoExtractor.get_video_info(
+            file_info.path
         )
+
+        logging.info(f"video_meta_info: {self.choose_video_meta_info}")
         self.ids.show_video_name.text = self.choose_video_meta_info.filename
-        self.ids.show_video_type.text = self.choose_video_info["extension"]
+        self.ids.show_video_type.text = file_info.extension
         self.ids.show_video_size.text = self.choose_video_meta_info.pretty_size
         self.ids.show_video_duration.text = self.choose_video_meta_info.time_duration
         self.ids.show_video_resolution.text = self.choose_video_meta_info.resolution
         self.ids.show_video_fps.text = str(self.choose_video_meta_info.fps)
-        self.play_video(path)
+        self.play_video(file_info.path)
 
     def play_video(self, path):
         self.ids.video_player.source = path

@@ -1,12 +1,11 @@
 import logging
-import os
-import time
 from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Union
 
 import cv2
-from utils.time_duration_util import TimeDurationFormatter
+from utils.file_util import SizeFormatter
+from utils.time_util import TimeDurationFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ VideoInfo = namedtuple(
 )
 
 
-class OpenCVVideoInfoExtractor:
+class VideoInfoExtractor:
     """使用OpenCV提取视频文件信息和生成缩略图的工具类"""
 
     def __init__(self):
@@ -82,7 +81,7 @@ class OpenCVVideoInfoExtractor:
 
             # 获取文件大小
             file_size = video_path.stat().st_size
-            pretty_size = self._format_size(file_size)
+            pretty_size = SizeFormatter.format_size_auto(file_size)
 
             # 创建并返回命名元组
             return VideoInfo(
@@ -115,29 +114,6 @@ class OpenCVVideoInfoExtractor:
             str: FourCC字符串表示
         """
         return "".join([chr((fourcc_int >> 8 * i) & 0xFF) for i in range(4)])
-
-    def _format_size(self, size_bytes):
-        """
-        格式化文件大小为人类可读格式
-
-        Args:
-            size_bytes (int): 文件大小（字节）
-
-        Returns:
-            str: 格式化后的大小字符串
-        """
-        if size_bytes == 0:
-            return "0 B"
-
-        size_names = ["B", "KB", "MB", "GB", "TB"]
-        i = 0
-        size = size_bytes
-
-        while size >= 1024 and i < len(size_names) - 1:
-            size /= 1024.0
-            i += 1
-
-        return f"{size:.2f} {size_names[i]}"
 
     def get_video_info_batch(self, video_paths):
         """
@@ -275,11 +251,6 @@ class OpenCVVideoInfoExtractor:
                         logger.debug(f"Generate thumbnails with [{str(output_path)}]")
 
                         # 保存图像
-                        # if format.lower() in ['jpg', 'jpeg']:
-                        # 此写法 路径带中文会写入失败
-                        # cv2.imwrite(str(output_path), frame, [cv2.IMWRITE_JPEG_QUALITY, quality])
-                        # else:
-                        # cv2.imwrite(str(output_path), frame)
                         if format.lower() in ["jpg", "jpeg"]:
                             cv2.imencode(
                                 "." + format, frame, [cv2.IMWRITE_JPEG_QUALITY, quality]
@@ -318,7 +289,7 @@ if __name__ == "__main__":
     import sys
 
     # 创建视频信息提取器
-    extractor = OpenCVVideoInfoExtractor()
+    extractor = VideoInfoExtractor()
 
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
